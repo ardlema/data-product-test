@@ -1,0 +1,18 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: data-product-template
+spec:
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: TaskRun
+      metadata:
+        generateName: data-product-git-clone-
+      spec:
+        workspaces:
+          - name: output
+        params:
+          - name: url
+            value: https://github.com/ardlema/data-product-mvp.git
+        taskRef:
+          name: git-clone

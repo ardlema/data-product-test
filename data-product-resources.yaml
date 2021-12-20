@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-secret
+type: Opaque
+stringData:
+  secretToken: "1234567"
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: data-product-event-listener
+spec:
+  serviceAccountName: data-product-listener-sa
+  triggers:
+    - triggerRef: data-product-listener-trigger
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: Trigger
+metadata:
+  name: data-product-listener-trigger
+spec:
+  bindings:
+    - ref: data-product-binding
+  template:
+    ref: data-product-template
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: data-product-binding
+spec:
+  params:
+    - name: greeting
+      value: $(body.greeting)
+---
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: data-product-pipeline
+spec:
+  workspaces:
+    - name: data-product-ws
+  tasks:
+    - name: clone-template-repo
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: https://github.com/ardlema/data-product-mvp.git
+      workspaces:
+        - name: output
+          workspace: data-product-ws
+---
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: data-product-template
+spec:
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1beta1
+      kind: PipelineRun
+      metadata:
+        name: data-product-pipeline-run
+      spec:
+        pipelineRef:
+          name: data-product-pipeline
+        workspaces:
+          - name: data-product-ws # this workspace name must be declared in the Pipeline
+            volumeClaimTemplate:
+              spec:
+                accessModes:
+                  - ReadWriteOnce # access mode may affect how you can use this volume in parallel tasks
+                resources:
+                  requests:
+                    storage: 1Gi

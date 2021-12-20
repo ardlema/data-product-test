@@ -1,0 +1,8 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: EventListener
+metadata:
+  name: data-product-event-listener
+spec:
+  serviceAccountName: data-product-listener-sa
+  triggers:
+    - triggerRef: data-product-listener-trigger
